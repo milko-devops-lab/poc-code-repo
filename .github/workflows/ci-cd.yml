@@ -1,0 +1,116 @@
+name: CI Build & Helm Bump
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+# Enterprise Best Practice: Минимални глобални права за GITHUB_TOKEN
+permissions:
+  contents: read
+  packages: write
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository_owner }}/claims-api
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    outputs:
+      short_sha: ${{ steps.vars.outputs.short_sha }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore & Build
+        run: |
+          dotnet restore
+          dotnet build --configuration Release --no-restore
+
+      - name: Set Short SHA
+        id: vars
+        run: echo "short_sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Log in to GHCR
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and Push Docker Image
+        if: github.event_name != 'pull_request'
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.vars.outputs.short_sha }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+
+  update-config-repo:
+    needs: build-and-push
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      # Генериране на временен токен чрез GitHub App
+      - name: Generate GitHub App Token
+        id: generate_token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ vars.CI_BOT_CLIENT_ID }}
+          private-key: ${{ secrets.CI_BOT_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: "poc-config-repo"
+
+      # Клониране на конфигурационното репо с генерирания токен
+      - name: Checkout Config Repo
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository_owner }}/poc-config-repo
+          token: ${{ steps.generate_token.outputs.token }}
+          path: poc-config-repo
+
+      # Обновяване на версията в values-dev.yaml
+      - name: Update Image Tag in Helm values-dev.yaml
+        run: |
+          cd poc-config-repo
+          
+          # Уверяваме се, че директорията съществува
+          mkdir -p helm/claims-api
+          
+          VALUES_FILE="helm/claims-api/values-dev.yaml"
+          NEW_TAG="${{ needs.build-and-push.outputs.short_sha }}"
+          
+          if [ -f "$VALUES_FILE" ]; then
+            # Използваме sed за обновяване на тага
+            sed -i "s/tag:.*/tag: \"$NEW_TAG\"/" $VALUES_FILE
+          else
+            # Ако файлът все още не съществува, го създаваме временно
+            echo "image:" > $VALUES_FILE
+            echo "  tag: \"$NEW_TAG\"" >> $VALUES_FILE
+          fi
+
+          git config user.name "milko-gitops-ci-bot[bot]"
+          git config user.email "milko-gitops-ci-bot[bot]@users.noreply.github.com"
+          
+          git add $VALUES_FILE
+          
+          # Проверка за налични промени преди commit
+          if git diff --staged --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "chore(ci): update dev image tag to ${NEW_TAG} [skip ci]"
+            git push origin main
+          fi
