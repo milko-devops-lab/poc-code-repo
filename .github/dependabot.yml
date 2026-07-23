@@ -1,0 +1,21 @@
+version: 2
+updates:
+  # Сканиране за нови NuGet пакети в .NET проекта
+  - package-ecosystem: "nuget"
+    directory: "/Claims.Api"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+
+  # Сканиране за нови версии на GitHub Actions в пайплайните
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+
+  # Сканиране на Docker base изображенията
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
