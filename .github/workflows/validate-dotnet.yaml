@@ -22,7 +22,7 @@ jobs:
           dotnet-version: ${{ inputs.dotnet-version }}
 
       - name: Restore Dependencies
-        run: dotnet restore
+        run: dotnet restore ./Claims.Api/Claims.Api.csproj
 
       - name: Build Solution
-        run: dotnet build --configuration Release --no-restore
+        run: dotnet build ./Claims.Api/Claims.Api.csproj --configuration Release --no-restore
