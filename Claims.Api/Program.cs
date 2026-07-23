@@ -1,24 +1,29 @@
 var builder = WebApplication.CreateBuilder(args);
 
+// Add Swagger services
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// Enable Swagger in all environments for PoC demo visibility
+// Enable Swagger UI for demo visibility
 app.UseSwagger();
-app.UseSwaggerUI();
+app.UseSwaggerUI(c =>
+{
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "Claims API v1");
+    c.RoutePrefix = "swagger";
+});
 
 var appVersion = Environment.GetEnvironmentVariable("APP_VERSION") ?? "1.0.0-dev";
 var environmentName = builder.Environment.EnvironmentName;
 
-app.MapGet("/", () => Results.Ok(new 
-{ 
-    Status = "Online", 
-    Service = "Claims API (GitOps Demo)", 
+app.MapGet("/", () => Results.Ok(new
+{
+    Status = "Online",
+    Service = "Claims API (GitOps Demo)",
     Version = appVersion,
     Environment = environmentName,
-    Timestamp = DateTime.UtcNow 
+    Timestamp = DateTime.UtcNow
 }));
 
 app.MapGet("/healthz", () => Results.Ok(new { Status = "Healthy" }));
