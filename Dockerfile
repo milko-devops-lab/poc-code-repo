@@ -12,7 +12,7 @@ WORKDIR "/src/Claims.Api"
 RUN dotnet publish "Claims.Api.csproj" -c Release -o /app/publish /p:UseAppHost=false
 
 # Stage 2: Runtime
-FROM mcr.microsoft.com/dotnet/aspnet:10.0-preview AS final
+FROM mcr.microsoft.com/dotnet/aspnet:11.0-preview AS final
 WORKDIR /app
 
 # Create non-root user for K8s / OpenShift security
