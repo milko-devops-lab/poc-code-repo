@@ -24,7 +24,7 @@ jobs:
       short_sha: ${{ steps.vars.outputs.short_sha }}
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup .NET 10
         uses: actions/setup-dotnet@v4
@@ -76,7 +76,7 @@ jobs:
 
       # Клониране на конфигурационното репо с генерирания токен
       - name: Checkout Config Repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: ${{ github.repository_owner }}/poc-config-repo
           token: ${{ steps.generate_token.outputs.token }}
