@@ -1,5 +1,5 @@
 # Stage 1: Build & Publish
-FROM mcr.microsoft.com/dotnet/sdk:10.0-preview AS build
+FROM mcr.microsoft.com/dotnet/sdk:11.0-preview AS build
 WORKDIR /src
 
 # Copy csproj and restore distinct layers for caching
