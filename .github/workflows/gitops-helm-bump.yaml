@@ -1,0 +1,67 @@
+name: Reusable - GitOps Helm Bump
+
+on:
+  workflow_call:
+    inputs:
+      config-repo:
+        required: true
+        type: string
+      values-file-path:
+        required: true
+        type: string
+      new-image-tag:
+        required: true
+        type: string
+    secrets:
+      client-id:
+        required: true
+      private-key:
+        required: true
+
+jobs:
+  bump-tag:
+    name: Update Helm Values Tag
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate GitHub App Token
+        id: generate_token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ secrets.client-id }}
+          private-key: ${{ secrets.private-key }}
+          owner: ${{ github.repository_owner }}
+          repositories: "poc-config-repo"
+
+      - name: Checkout Config Repo
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ inputs.config-repo }}
+          token: ${{ steps.generate_token.outputs.token }}
+          path: config-repo
+
+      - name: Update Image Tag in Helm Values
+        run: |
+          cd config-repo
+          mkdir -p $(dirname "${{ inputs.values-file-path }}")
+          
+          VALUES_FILE="${{ inputs.values-file-path }}"
+          NEW_TAG="${{ inputs.new-image-tag }}"
+          
+          if [ -f "$VALUES_FILE" ]; then
+            sed -i "s/tag:.*/tag: \"$NEW_TAG\"/" $VALUES_FILE
+          else
+            echo "image:" > $VALUES_FILE
+            echo "  tag: \"$NEW_TAG\"" >> $VALUES_FILE
+          fi
+
+          git config user.name "milko-gitops-ci-bot[bot]"
+          git config user.email "milko-gitops-ci-bot[bot]@users.noreply.github.com"
+          
+          git add $VALUES_FILE
+          
+          if git diff --staged --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "chore(ci): update image tag to ${NEW_TAG} [skip ci]"
+            git push origin main
+          fi

@@ -1,116 +1,46 @@
-name: CI Build & Helm Bump
+name: CI/CD Pipeline
 
 on:
   push:
     branches:
       - main
+    paths-ignore:
+      - '**.md'
   pull_request:
     branches:
       - main
 
-# Enterprise Best Practice: Минимални глобални права за GITHUB_TOKEN
 permissions:
   contents: read
   packages: write
 
-env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository_owner }}/claims-api
-
 jobs:
+  # 1. Валидация (изпълнява се ВИНАГИ - при PR и при Push)
+  validate:
+    name: Validate
+    uses: ./.github/workflows/validate-dotnet.yaml
+    with:
+      dotnet-version: '10.0.x'
+
+  # 2. Docker Build & Push (само при Push в main)
   build-and-push:
-    runs-on: ubuntu-latest
-    outputs:
-      short_sha: ${{ steps.vars.outputs.short_sha }}
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v7
+    name: Containerize
+    needs: validate
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    uses: ./.github/workflows/docker-build-push.yaml
+    with:
+      image-name: ${{ github.repository_owner }}/claims-api
 
-      - name: Setup .NET 10
-        uses: actions/setup-dotnet@v6
-        with:
-          dotnet-version: '10.0.x'
-
-      - name: Restore & Build
-        run: |
-          dotnet restore ./Claims.Api/Claims.Api.csproj
-          dotnet build ./Claims.Api/Claims.Api.csproj --configuration Release --no-restore
-
-      - name: Set Short SHA
-        id: vars
-        run: echo "short_sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
-
-      - name: Log in to GHCR
-        if: github.event_name != 'pull_request'
-        uses: docker/login-action@v4
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build and Push Docker Image
-        if: github.event_name != 'pull_request'
-        uses: docker/build-push-action@v7
-        with:
-          context: .
-          file: ./Dockerfile
-          push: true
-          tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.vars.outputs.short_sha }}
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
-
-  update-config-repo:
+  # 3. GitOps Helm Bump (само при Push в main)
+  gitops-bump:
+    name: GitOps Sync
     needs: build-and-push
-    if: github.event_name != 'pull_request'
-    runs-on: ubuntu-latest
-    steps:
-      # Генериране на временен токен чрез GitHub App
-      - name: Generate GitHub App Token
-        id: generate_token
-        uses: actions/create-github-app-token@v3
-        with:
-          client-id: ${{ vars.CI_BOT_CLIENT_ID }}
-          private-key: ${{ secrets.CI_BOT_PRIVATE_KEY }}
-          owner: ${{ github.repository_owner }}
-          repositories: "poc-config-repo"
-
-      # Клониране на конфигурационното репо с генерирания токен
-      - name: Checkout Config Repo
-        uses: actions/checkout@v7
-        with:
-          repository: ${{ github.repository_owner }}/poc-config-repo
-          token: ${{ steps.generate_token.outputs.token }}
-          path: poc-config-repo
-
-      # Обновяване на версията в values-dev.yaml
-      - name: Update Image Tag in Helm values-dev.yaml
-        run: |
-          cd poc-config-repo
-          
-          # Уверяваме се, че директорията съществува
-          mkdir -p helm/claims-api
-          
-          VALUES_FILE="helm/claims-api/values-dev.yaml"
-          NEW_TAG="${{ needs.build-and-push.outputs.short_sha }}"
-          
-          if [ -f "$VALUES_FILE" ]; then
-            # Използваме sed за обновяване на тага
-            sed -i "s/tag:.*/tag: \"$NEW_TAG\"/" $VALUES_FILE
-          else
-            # Ако файлът все още не съществува, го създаваме временно
-            echo "image:" > $VALUES_FILE
-            echo "  tag: \"$NEW_TAG\"" >> $VALUES_FILE
-          fi
-
-          git config user.name "milko-gitops-ci-bot[bot]"
-          git config user.email "milko-gitops-ci-bot[bot]@users.noreply.github.com"
-          
-          git add $VALUES_FILE
-          
-          # Проверка за налични промени преди commit
-          if git diff --staged --quiet; then
-            echo "No changes to commit."
-          else
-            git commit -m "chore(ci): update dev image tag to ${NEW_TAG} [skip ci]"
-            git push origin main
-          fi
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    uses: ./.github/workflows/gitops-helm-bump.yaml
+    with:
+      config-repo: ${{ github.repository_owner }}/poc-config-repo
+      values-file-path: 'helm/claims-api/values-dev.yaml'
+      new-image-tag: ${{ needs.build-and-push.outputs.short_sha }}
+    secrets:
+      client-id: ${{ vars.CI_BOT_CLIENT_ID }}
+      private-key: ${{ secrets.CI_BOT_PRIVATE_KEY }}

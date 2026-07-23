@@ -1,0 +1,43 @@
+name: Reusable - Docker Build & Push
+
+on:
+  workflow_call:
+    inputs:
+      image-name:
+        required: true
+        type: string
+    outputs:
+      short_sha:
+        description: "The short git commit SHA used as image tag"
+        value: ${{ jobs.build.outputs.short_sha }}
+
+jobs:
+  build:
+    name: Build & Push Container Image
+    runs-on: ubuntu-latest
+    outputs:
+      short_sha: ${{ steps.vars.outputs.short_sha }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set Short SHA
+        id: vars
+        run: echo "short_sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: |
+            ghcr.io/${{ inputs.image-name }}:${{ steps.vars.outputs.short_sha }}
+            ghcr.io/${{ inputs.image-name }}:latest

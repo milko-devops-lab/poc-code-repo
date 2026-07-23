@@ -15,9 +15,8 @@ RUN dotnet publish "Claims.Api.csproj" -c Release -o /app/publish /p:UseAppHost=
 FROM mcr.microsoft.com/dotnet/aspnet:10.0-preview AS final
 WORKDIR /app
 
-# Create non-root user for K8s / OpenShift security
-RUN adduser --disabled-password --gecos "" appuser && chown -R appuser:appuser /app
-USER appuser
+# Използваме вградения в .NET 8/9/10 non-root потребител (app) за K8s / OpenShift сигурност
+USER app
 
 EXPOSE 8080
 ENV ASPNETCORE_URLS=http://+:8080
