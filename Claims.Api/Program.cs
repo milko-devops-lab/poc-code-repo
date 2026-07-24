@@ -26,12 +26,13 @@ app.MapGet("/", () => Results.Ok(new
     Timestamp = DateTime.UtcNow
 }));
 
-app.MapGet("/healthz", () => Results.Ok(new { Status = "Healthy" }));
+app.MapGet("/healthz", () => Results.Ok(new { Status = "Healthy !" }));
 
 app.MapGet("/api/claims", () => Results.Ok(new[]
 {
     new { Id = 101, Customer = "Acme Corp", Amount = 1500.00, Status = "Submitted" },
-    new { Id = 102, Customer = "Globex Inc", Amount = 4200.50, Status = "Approved" }
+    new { Id = 102, Customer = "Globex Inc", Amount = 4200.50, Status = "Approved" },
+    new { Id = 103, Customer = "Globex Inc", Amount = 200.50, Status = "Completed" }
 }));
 
 app.Run();
