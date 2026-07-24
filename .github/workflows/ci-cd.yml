@@ -15,14 +15,14 @@ permissions:
   packages: write
 
 jobs:
-  # 1. Валидация (изпълнява се ВИНАГИ - при PR и при Push)
+  # 1. Validation - runs on PR and Push
   validate:
     name: Validate
     uses: ./.github/workflows/validate-dotnet.yaml
     with:
       dotnet-version: '10.0.x'
 
-  # 2. Docker Build & Push (само при Push в main)
+  # 2. Docker Build & Push (only on Push to main)
   build-and-push:
     name: Containerize
     needs: validate
@@ -31,7 +31,7 @@ jobs:
     with:
       image-name: ${{ github.repository_owner }}/claims-api
 
-  # 3. GitOps Helm Bump (само при Push в main)
+  # 3. GitOps Helm Bump (only on Push to main)
   gitops-bump:
     name: GitOps Sync
     needs: build-and-push
