@@ -1,12 +1,34 @@
+using System.Net.Mime;
+using System.Reflection;
+using System.Text.Json;
+using Claims.Api.Models;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add Swagger services
+// Add Logging & Infrastructure Services
+builder.Services.AddLogging();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(options =>
+{
+    options.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
+    {
+        Title = "Claims API (GitOps Production Grade)",
+        Version = "v1",
+        Description = "Production-ready enterprise API service deployed via GitOps."
+    });
+});
+
+// Native .NET Health Checks Engine
+builder.Services.AddHealthChecks()
+    .AddCheck("self", () => HealthCheckResult.Healthy("Application is healthy"), tags: new[] { "live" });
 
 var app = builder.Build();
 
-// Enable Swagger UI for demo visibility
+var logger = app.Services.GetRequiredService<ILogger<Program>>();
+
+// Swagger UI Configuration
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
@@ -14,25 +36,67 @@ app.UseSwaggerUI(c =>
     c.RoutePrefix = "swagger";
 });
 
-var appVersion = Environment.GetEnvironmentVariable("APP_VERSION") ?? "1.0.0-dev";
+// Environment / Application Metadata
+var appVersion = Environment.GetEnvironmentVariable("APP_VERSION")
+                 ?? Assembly.GetExecutingAssembly().GetName().Version?.ToString()
+                 ?? "1.0.0-dev";
+
 var environmentName = builder.Environment.EnvironmentName;
 
-app.MapGet("/", () => Results.Ok(new
-{
-    Status = "Online",
-    Service = "Claims API (GitOps Demo)",
-    Version = appVersion,
-    Environment = environmentName,
-    Timestamp = DateTime.UtcNow
-}));
+logger.LogInformation("Starting Claims API Service. Version: {Version}, Environment: {Env}", appVersion, environmentName);
 
-app.MapGet("/healthz", () => Results.Ok(new { Status = "Healthy !" }));
-
-app.MapGet("/api/claims", () => Results.Ok(new[]
+// Root Status Endpoint
+app.MapGet("/", (ILogger<Program> log) =>
 {
-    new { Id = 101, Customer = "Acme Corp", Amount = 1500.00, Status = "Submitted" },
-    new { Id = 102, Customer = "Globex Inc", Amount = 4200.50, Status = "Approved" },
-    new { Id = 103, Customer = "Globex Inc", Amount = 200.50, Status = "Completed" }
-}));
+    log.LogInformation("Root endpoint requested.");
+    return Results.Ok(new
+    {
+        Status = "Online",
+        Service = "Claims API",
+        Version = appVersion,
+        Environment = environmentName,
+        Timestamp = DateTime.UtcNow
+    });
+})
+.WithName("GetRootStatus")
+.Produces(StatusCodes.Status200OK);
+
+// Custom Structured Health Check Endpoint using HealthCheckResponse DTO
+app.MapHealthChecks("/healthz", new HealthCheckOptions
+{
+    ResponseWriter = async (context, report) =>
+    {
+        context.Response.ContentType = MediaTypeNames.Application.Json;
+
+        var response = new HealthCheckResponse(
+            Status: report.Status.ToString(),
+            TotalDuration: report.TotalDuration.ToString(),
+            Entries: report.Entries.ToDictionary(
+                entry => entry.Key,
+                entry => entry.Value.Status.ToString()
+            )
+        );
+
+        var jsonOptions = new JsonSerializerOptions { WriteIndented = true };
+        await context.Response.WriteAsync(JsonSerializer.Serialize(response, jsonOptions));
+    }
+});
+
+// Business Domain Endpoint: Claims
+app.MapGet("/api/claims", (ILogger<Program> log) =>
+{
+    log.LogInformation("Fetching all claims");
+
+    var claims = new List<ClaimDto>
+    {
+        new(101, "Acme Corp", 1500.00m, "Submitted", DateTime.UtcNow.AddDays(-2)),
+        new(102, "Globex Inc", 4200.50m, "Approved", DateTime.UtcNow.AddDays(-1)),
+        new(103, "Initech LLC", 200.50m, "Completed", DateTime.UtcNow)
+    };
+
+    return Results.Ok(claims);
+})
+.WithName("GetClaims")
+.Produces<IEnumerable<ClaimDto>>(StatusCodes.Status200OK);
 
 app.Run();

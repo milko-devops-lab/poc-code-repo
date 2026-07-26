@@ -13,11 +13,13 @@ jobs:
     name: Validate Code & Build
     runs-on: ubuntu-latest
     steps:
+      # actions/checkout@v4.2.2
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
+      # actions/setup-dotnet@v4.3.0
       - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@39cd7d0b8cc9031a5d97f5472809a68e0e517f05
         with:
           dotnet-version: ${{ inputs.dotnet-version }}
 
@@ -26,3 +28,14 @@ jobs:
 
       - name: Build Solution
         run: dotnet build ./Claims.Api/Claims.Api.csproj --configuration Release --no-restore
+
+      # =========================================================================
+      # UNIT TESTS TASK (EXAMPLE / PREPARED FOR ACTIVATION)
+      # =========================================================================
+      # To enable unit testing once test project is added:
+      #  1. Uncomment the step below.
+      #  2. Adjust path to your test project (e.g., ./Claims.Api.Tests/Claims.Api.Tests.csproj).
+      #
+      # - name: Run Unit Tests
+      #   run: dotnet test ./Claims.Api.Tests/Claims.Api.Tests.csproj --configuration Release --no-build --verbosity normal --logger "trx"
+      # =========================================================================

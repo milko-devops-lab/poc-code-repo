@@ -10,14 +10,15 @@ on:
     branches:
       - main
 
+# Enforce Principle of Least Privilege globally
 permissions:
   contents: read
   packages: write
 
 jobs:
-  # 1. Validation - runs on PR and Push
+  # 1. Validation & Testing - runs on PR and Push
   validate:
-    name: Validate
+    name: Validate & Test
     uses: ./.github/workflows/validate-dotnet.yaml
     with:
       dotnet-version: '10.0.x'
