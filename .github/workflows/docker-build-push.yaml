@@ -34,9 +34,9 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # docker/build-push-action@v6.15.0
+      # docker/build-push-action@v7.3.0
       - name: Build and Push Docker Image
-        uses: docker/build-push-action@471d1dc09d426509e628d2f19131aa80d22f87a3
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a
         with:
           context: .
           file: ./Dockerfile
