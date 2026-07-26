@@ -18,17 +18,17 @@ jobs:
     outputs:
       short_sha: ${{ steps.vars.outputs.short_sha }}
     steps:
-      # actions/checkout@v4.2.2
+      # actions/checkout@v7
       - name: Checkout Code
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
 
       - name: Set Short SHA
         id: vars
         run: echo "short_sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
-      # docker/login-action@v3.3.0
+      # docker/login-action@v4.4.0
       - name: Log in to GHCR
-        uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567
+        uses: docker/login-action@af1e73f918a031802d376d3c8bbc3fe56130a9b0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
