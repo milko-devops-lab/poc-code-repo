@@ -23,10 +23,10 @@ jobs:
     name: Update Helm Values Tag
     runs-on: ubuntu-latest
     steps:
-      # actions/create-github-app-token@v1.11.1
+      # actions/create-github-app-token@v3.2.0
       - name: Generate GitHub App Token
         id: generate_token
-        uses: actions/create-github-app-token@c8c49d20b719b2c856166464600a12e3e55c6e80
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1
         with:
           client-id: ${{ secrets.client-id }}
           private-key: ${{ secrets.private-key }}
