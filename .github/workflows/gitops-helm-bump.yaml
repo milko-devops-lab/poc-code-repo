@@ -23,17 +23,19 @@ jobs:
     name: Update Helm Values Tag
     runs-on: ubuntu-latest
     steps:
+      # actions/create-github-app-token@v1.11.1
       - name: Generate GitHub App Token
         id: generate_token
-        uses: actions/create-github-app-token@v3
+        uses: actions/create-github-app-token@c8c49d20b719b2c856166464600a12e3e55c6e80
         with:
           client-id: ${{ secrets.client-id }}
           private-key: ${{ secrets.private-key }}
           owner: ${{ github.repository_owner }}
           repositories: "poc-config-repo"
 
+      # actions/checkout@v7
       - name: Checkout Config Repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
         with:
           repository: ${{ inputs.config-repo }}
           token: ${{ steps.generate_token.outputs.token }}

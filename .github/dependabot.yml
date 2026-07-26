@@ -1,20 +1,20 @@
 version: 2
 updates:
-  # Сканиране за нови NuGet пакети в .NET проекта
+  # Scan for new NuGet packages in the .NET project
   - package-ecosystem: "nuget"
     directory: "/Claims.Api"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 5
 
-  # Сканиране за нови версии на GitHub Actions в пайплайните
+  # Scan for new GitHub Actions versions in workflows
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 5
 
-  # Сканиране на Docker base изображенията
+  # Scan for new Docker base images
   - package-ecosystem: "docker"
     directory: "/"
     schedule:
