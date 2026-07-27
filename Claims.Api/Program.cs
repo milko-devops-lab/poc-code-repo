@@ -60,7 +60,7 @@ app.MapGet("/", (ILogger<Program> log) =>
     };
 
     // Текстът, който лесно подлежи на промяна при Git commit за демонстрация
-    var featureText = "🚀 GitOps Demo: Automatic Sync Enabled!";
+    var featureText = "- V 1 - GitOps Demo: Automatic Sync Enabled!";
 
     var htmlContent = $$"""
         <!DOCTYPE html>
