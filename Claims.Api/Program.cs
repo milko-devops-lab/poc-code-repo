@@ -51,7 +51,7 @@ app.MapGet("/", (ILogger<Program> log) =>
     log.LogInformation("Root endpoint requested.");
     return Results.Ok(new
     {
-        Status = "Online",
+        Status = "Online!",
         Service = "Claims API",
         Version = appVersion,
         Environment = environmentName,
