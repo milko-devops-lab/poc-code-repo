@@ -13,8 +13,6 @@ on:
   pull_request:
     branches:
       - main
-  
-    
 
 # Enforce Principle of Least Privilege globally
 permissions:
@@ -45,6 +43,7 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     uses: ./.github/workflows/gitops-helm-bump.yaml
     with:
+      environment: dev
       config-repo: ${{ github.repository_owner }}/poc-config-repo
       values-file-path: 'helm/claims-api/values-dev.yaml'
       new-image-tag: ${{ needs.build-and-push.outputs.short_sha }}
