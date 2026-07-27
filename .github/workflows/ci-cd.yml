@@ -4,10 +4,6 @@ on:
   push:
     branches:
       - main
-    tags:
-      - 'v*.*.*'  
-    # PROD is possible only if tag is present, otherwise it will be skipped
-    # tag can be created manually or via GitHub Release
     paths-ignore:
       - '**.md'
   pull_request:
@@ -67,15 +63,13 @@ jobs:
 
   promote-prod:
     name: Promote to PROD
-    # PROD: вързан към таговете
-    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     uses: ./.github/workflows/gitops-helm-bump.yaml
     with:
       environment: prod
       config-repo: ${{ github.repository_owner }}/poc-config-repo
       values-file-path: 'helm/claims-api/values-prod.yaml'
-      # тук можеш да ползваш или short_sha от build, или самия таг
-      new-image-tag: ${{ github.ref_name }}
+      new-image-tag: ${{ needs.build-and-push.outputs.short_sha }}
     secrets:
       client-id: ${{ vars.CI_BOT_CLIENT_ID }}
       private-key: ${{ secrets.CI_BOT_PRIVATE_KEY }}
