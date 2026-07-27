@@ -49,7 +49,7 @@ jobs:
 
   promote-test:
     name: Promote to TEST
-    needs: promote-dev
+    needs: [build-and-push, promote-dev]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     uses: ./.github/workflows/gitops-helm-bump.yaml
     with:
@@ -63,7 +63,7 @@ jobs:
 
   promote-prod:
     name: Promote to PROD
-    needs: promote-test
+    needs: [build-and-push, promote-test]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     uses: ./.github/workflows/gitops-helm-bump.yaml
     with:
