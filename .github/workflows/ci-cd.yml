@@ -4,6 +4,10 @@ on:
   push:
     branches:
       - main
+    tags:
+      - 'v*.*.*'  
+    # PROD is possible only if tag is present, otherwise it will be skipped
+    # tag can be created manually or via GitHub Release
     paths-ignore:
       - '**.md'
   pull_request:
@@ -33,15 +37,45 @@ jobs:
       image-name: ${{ github.repository_owner }}/claims-api
 
   # 3. GitOps Helm Bump (only on Push to main)
-  gitops-bump:
-    name: GitOps Sync
+  promote-dev:
+    name: GitOps Sync DEV
     needs: build-and-push
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     uses: ./.github/workflows/gitops-helm-bump.yaml
     with:
+      environment: dev
       config-repo: ${{ github.repository_owner }}/poc-config-repo
       values-file-path: 'helm/claims-api/values-dev.yaml'
       new-image-tag: ${{ needs.build-and-push.outputs.short_sha }}
+    secrets:
+      client-id: ${{ vars.CI_BOT_CLIENT_ID }}
+      private-key: ${{ secrets.CI_BOT_PRIVATE_KEY }}
+
+  promote-test:
+    name: Promote to TEST
+    needs: build-and-push
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    uses: ./.github/workflows/gitops-helm-bump.yaml
+    with:
+      environment: test
+      config-repo: ${{ github.repository_owner }}/poc-config-repo
+      values-file-path: 'helm/claims-api/values-test.yaml'
+      new-image-tag: ${{ needs.build-and-push.outputs.short_sha }}
+    secrets:
+      client-id: ${{ vars.CI_BOT_CLIENT_ID }}
+      private-key: ${{ secrets.CI_BOT_PRIVATE_KEY }}
+
+  promote-prod:
+    name: Promote to PROD
+    # PROD: вързан към таговете
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    uses: ./.github/workflows/gitops-helm-bump.yaml
+    with:
+      environment: prod
+      config-repo: ${{ github.repository_owner }}/poc-config-repo
+      values-file-path: 'helm/claims-api/values-prod.yaml'
+      # тук можеш да ползваш или short_sha от build, или самия таг
+      new-image-tag: ${{ github.ref_name }}
     secrets:
       client-id: ${{ vars.CI_BOT_CLIENT_ID }}
       private-key: ${{ secrets.CI_BOT_PRIVATE_KEY }}
