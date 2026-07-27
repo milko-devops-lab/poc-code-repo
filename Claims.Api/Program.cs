@@ -62,7 +62,7 @@ app.MapGet("/", (ILogger<Program> log) =>
     // Текстът, който лесно подлежи на промяна при Git commit за демонстрация
     var featureText = "🚀 GitOps Demo: Automatic Sync Enabled!";
 
-    var htmlContent = $"""
+    var htmlContent = $$"""
         <!DOCTYPE html>
         <html lang="en">
         <head>
@@ -70,26 +70,26 @@ app.MapGet("/", (ILogger<Program> log) =>
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <title>Claims API - GitOps Dashboard</title>
             <style>
-                body {{font - family: system-ui, -apple-system, sans-serif; background: #0f172a; color: #f8fafc; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }}
-                .card {{background: #1e293b; padding: 2.5rem; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); text-align: center; max-width: 500px; width: 100%; border-top: 6px solid {themeColor}; }}
-                .badge {{background: {themeColor}; color: white; padding: 0.35rem 0.8rem; border-radius: 9999px; font-weight: bold; font-size: 0.85rem; text-transform: uppercase; display: inline-block; margin-bottom: 1rem; }}
-                h1 {{font - size: 1.8rem; margin: 0 0 0.5rem 0; }}
-                p.feature {{color: #38bdf8; font-size: 1.1rem; font-weight: 600; margin: 1.5rem 0; padding: 0.75rem; background: #0f172a; border-radius: 8px; border: 1px dashed #38bdf8; }}
-                .meta {{font - size: 0.85rem; color: #94a3b8; text-align: left; margin-top: 1.5rem; border-top: 1px solid #334155; padding-top: 1rem; line-height: 1.6; }}
-                a {{color: #38bdf8; text-decoration: none; font-weight: bold; }}
-                a:hover {{text - decoration: underline; }}
+                body { font-family: system-ui, -apple-system, sans-serif; background: #0f172a; color: #f8fafc; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+                .card { background: #1e293b; padding: 2.5rem; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); text-align: center; max-width: 500px; width: 100%; border-top: 6px solid {{themeColor}}; }
+                .badge { background: {{themeColor}}; color: white; padding: 0.35rem 0.8rem; border-radius: 9999px; font-weight: bold; font-size: 0.85rem; text-transform: uppercase; display: inline-block; margin-bottom: 1rem; }
+                h1 { font-size: 1.8rem; margin: 0 0 0.5rem 0; }
+                p.feature { color: #38bdf8; font-size: 1.1rem; font-weight: 600; margin: 1.5rem 0; padding: 0.75rem; background: #0f172a; border-radius: 8px; border: 1px dashed #38bdf8; }
+                .meta { font-size: 0.85rem; color: #94a3b8; text-align: left; margin-top: 1.5rem; border-top: 1px solid #334155; padding-top: 1rem; line-height: 1.6; }
+                a { color: #38bdf8; text-decoration: none; font-weight: bold; }
+                a:hover { text-decoration: underline; }
             </style>
         </head>
         <body>
             <div class="card">
-                <span class="badge">{environmentName}</span>
+                <span class="badge">{{environmentName}}</span>
                 <h1>Claims API Service</h1>
-                <p class="feature">{featureText}</p>
+                <p class="feature">{{featureText}}</p>
                 <p><a href="/swagger">📚 Open Swagger API Docs</a></p>
                 <div class="meta">
-                    <div><strong>Image Tag / Version:</strong> <code>{appVersion}</code></div>
+                    <div><strong>Image Tag / Version:</strong> <code>{{appVersion}}</code></div>
                     <div><strong>Status:</strong> Healthy 🟢</div>
-                    <div><strong>Last Sync:</strong> {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} UTC</div>
+                    <div><strong>Last Sync:</strong> {{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}} UTC</div>
                 </div>
             </div>
         </body>
