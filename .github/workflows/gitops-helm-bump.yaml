@@ -3,6 +3,10 @@ name: Reusable - GitOps Helm Bump
 on:
   workflow_call:
     inputs:
+      environment:
+        required: true
+        type: string
+        default: dev
       config-repo:
         required: true
         type: string
@@ -22,6 +26,7 @@ jobs:
   bump-tag:
     name: Update Helm Values Tag
     runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
     steps:
       # actions/create-github-app-token@v3.2.0
       - name: Generate GitHub App Token

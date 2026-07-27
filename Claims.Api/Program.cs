@@ -39,7 +39,7 @@ app.UseSwaggerUI(c =>
 // Environment / Application Metadata
 var appVersion = Environment.GetEnvironmentVariable("APP_VERSION")
                  ?? Assembly.GetExecutingAssembly().GetName().Version?.ToString()
-                 ?? "1.0.0-dev";
+                 ?? "1.0.1-dev";
 
 var environmentName = builder.Environment.EnvironmentName;
 
